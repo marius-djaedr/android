@@ -1,7 +1,20 @@
 package com.me.music
 
-import android.media.MediaPlayer
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.me.music.ui.theme.MusicTheme
+
+
+import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -9,20 +22,26 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Image
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import java.util.concurrent.TimeUnit
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     // Declare MediaPlayer for audio playback
     private var mediaPlayer: MediaPlayer? = null
 
     // Declare UI elements
-    private var seekBar: SeekBar? = null
-    private var textCurrentTime: TextView? = null
-    private var textTotalTime: TextView? = null
-    private var buttonPlay: ImageView? = null
-    private var buttonPause: ImageView? = null
-    private var buttonStop: ImageView? = null
+    var seekBar: SeekBar? = null
+    var textCurrentTime: TextView? = null
+    var textTotalTime: TextView? = null
+    var buttonPlay: ImageView? = null
+    var buttonPause: ImageView? = null
+    var buttonStop: ImageView? = null
 
     // Handler to update SeekBar and current time text every second
     private val handler = Handler(Looper.getMainLooper())
@@ -43,17 +62,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            MusicTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    MainView(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
 
-        // Set layout for the activity
-        setContentView(R.layout.activity_main)
-
-        // Initialize views from layout
-        seekBar = findViewById<SeekBar>(R.id.seekBar)
-        textCurrentTime = findViewById<TextView>(R.id.textCurrentTime)
-        textTotalTime = findViewById<TextView>(R.id.textTotalTime)
-        buttonPlay = findViewById<ImageView>(R.id.buttonPlay)
-        buttonPause = findViewById<ImageView>(R.id.buttonPause)
-        buttonStop = findViewById<ImageView>(R.id.buttonStop)
 
         // Create MediaPlayer instance with a raw audio resource
         mediaPlayer = MediaPlayer.create(this, R.raw.sound)
@@ -117,3 +136,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    MusicTheme {
+        MainView()
+    }
+}
+
+@Composable
+fun MainView(modifier: Modifier = Modifier) {
+    var sliderPosition by remember { mutableStateOf(0f) }
+    Image(painter = painterResource(id = R.drawable.music_icon), contentDescription = null)
+    Text(text = sliderPosition.toString(), modifier = modifier)
+    Slider(
+        value = sliderPosition,
+        onValueChange = { sliderPosition = it }
+    )
+}
+
+//TODO need to pull layout from other project
+//TODO then, update all the logic to do what it is supposed to
+
+
