@@ -37,6 +37,10 @@ class _mPlaybackService : _iPlaybackService{
         TODO("Not yet implemented")
     }
 
+    override suspend fun loadProgress(updateProgress: (Float) -> Unit) {
+        TODO("Not yet implemented")
+    }
+
     // Format milliseconds into minutes:seconds format (e.g., 1:05)
     private fun formatTime(milliseconds: Int): String {
         val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds.toLong())

@@ -1,6 +1,7 @@
 package com.me.music
 
 
+import android.annotation.SuppressLint
 import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,6 +24,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -33,6 +35,11 @@ import com.me.music.service.PlaybackService
 import com.me.music.service._iPlaybackService
 import com.me.music.service._mPlaybackService
 import com.me.music.ui.theme.MusicTheme
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -68,6 +75,7 @@ fun MainView(
     }
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun PlaybackView(
     playback: _iPlaybackService,
@@ -80,6 +88,15 @@ fun PlaybackView(
         modifier = modifier
     ){
         val imageId = if(darkTheme){R.drawable.music_icon_dark}else{R.drawable.music_icon}
+        var sliderPosition by remember { mutableFloatStateOf(0f) }
+
+        val scope = rememberCoroutineScope() // Create a coroutine scope
+        scope.launch {
+            playback.loadProgress { progress ->
+                sliderPosition = progress
+            }
+        }
+
         Image(
             painter = painterResource(id = imageId),
             contentDescription = null,
@@ -87,8 +104,11 @@ fun PlaybackView(
         )
 
         Slider(
-            value = playback.currentPercent(),
-            onValueChange = {playback.seekTo(it)},
+            value = sliderPosition,
+            onValueChange = {it ->
+                sliderPosition = it
+                playback.seekTo(it)
+                            },
             modifier = Modifier
                 .width(280.dp)
                 .paddingFromBaseline(top= 24.dp, bottom= 8.dp)
@@ -157,7 +177,9 @@ fun MainViewPreview() {
 //- play queue
 //- skip song, forward and back, buttons
 //- change "stop" to "restart"
+//- bluetooth
 //- smart playlist
+//- cast
 //- integrate with google maps
 
 

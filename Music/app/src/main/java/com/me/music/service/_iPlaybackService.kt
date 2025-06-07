@@ -9,4 +9,6 @@ interface _iPlaybackService {
     fun pause()
     fun play()
     fun stop()
+
+    suspend fun loadProgress(updateProgress: (Float) -> Unit)
 }

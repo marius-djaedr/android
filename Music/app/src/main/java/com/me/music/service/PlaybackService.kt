@@ -2,6 +2,8 @@ package com.me.music.service
 
 import android.media.MediaPlayer
 import java.util.concurrent.TimeUnit
+import android.os.Handler
+import android.os.Looper
 
 class PlaybackService(val mediaPlayer: MediaPlayer) : _iPlaybackService{
 
@@ -32,6 +34,22 @@ class PlaybackService(val mediaPlayer: MediaPlayer) : _iPlaybackService{
 
     override fun stop() {
         mediaPlayer.stop()
+    }
+
+
+    /** Iterate the progress value */
+    override suspend fun loadProgress(updateProgress: (Float) -> Unit) {
+        val handler = Handler(Looper.getMainLooper())
+
+        val updateSeekBar: Runnable = object : Runnable {
+            override fun run() {
+                updateProgress(currentPercent())
+
+                // Repeat this task every 1 second
+                handler.postDelayed(this, 1000)
+            }
+        }
+
     }
 
 
