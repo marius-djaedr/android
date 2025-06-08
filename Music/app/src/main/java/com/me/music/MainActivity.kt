@@ -179,7 +179,6 @@ fun MainViewPreview() {
 //- display current playing song, artist, album
 //- autoplay next in queue
 //- skip song buttons, forward and back
-//- change "stop" to "restart"
 //- bluetooth
 //- smart playlist
 //- cast
