@@ -41,131 +41,223 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
+import android.content.Context
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Create MediaPlayer instance with a raw audio resource
-        val mediaPlayer = MediaPlayer.create(this, R.raw.sound)
-        val playback = PlaybackService(mediaPlayer)
-        enableEdgeToEdge()
-        setContent {
-            MusicTheme {
-                MainView(playback)
+
+        try {
+            enableEdgeToEdge()
+            setContent {
+                MusicTheme {
+                    App(this)
+                }
             }
+        }catch(e:Exception){
+            val exc = e
+        }
+    }
+}
+
+// https://developer.android.com/guide/navigation/design
+@Serializable
+data class PlaybackDto(
+    val playback: _iPlaybackService,
+    val darkTheme: Boolean
+)
+
+@Serializable
+data class SongSelectDto(
+    val context: Context?,
+    val darkTheme: Boolean
+)
+
+@Composable
+fun App(
+    context: Context,
+    darkTheme: Boolean = isSystemInDarkTheme()
+){
+    val navController = rememberNavController()
+    NavHost(
+        navController,
+        startDestination = SongSelectDto(context = context, darkTheme = darkTheme)
+    ) {
+        composable<PlaybackDto> { backStackEntry ->
+            val playback: PlaybackDto = backStackEntry.toRoute()
+            PlaybackView(
+                dto = playback,
+                onNavigateToSongSelect = {
+                    navController.navigate(
+                        route = SongSelectDto(context = context, darkTheme = darkTheme)
+                    )
+                }
+            )
+        }
+        composable<SongSelectDto> {
+            SongSelectView(
+                dto = SongSelectDto(context = context, darkTheme = darkTheme),
+                onNavigateToPlayback = { playback ->
+                    navController.navigate(
+                        route = PlaybackDto(playback = playback, darkTheme = darkTheme)
+                    )
+                }
+            )
         }
     }
 }
 
 @Composable
-fun MainView(
-    playback: _iPlaybackService,
-    darkTheme: Boolean = isSystemInDarkTheme()
+fun SongSelectView(
+    dto: SongSelectDto,
+    onNavigateToPlayback: (_iPlaybackService) -> Unit
 ){
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding ->
-        PlaybackView(
-            playback,
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-            darkTheme
-        )
+    TextButton(
+        onClick = {
+            // Create MediaPlayer instance with a raw audio resource
+            val mediaPlayer = MediaPlayer.create(dto.context, R.raw.sound)
+            val playback = PlaybackService(mediaPlayer)
+            onNavigateToPlayback(playback)
+        }
+    ) {
+        Text(text = "Play Song")
     }
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun PlaybackView(
-    playback: _iPlaybackService,
-    modifier: Modifier = Modifier,
-    darkTheme: Boolean = isSystemInDarkTheme()
+    dto: PlaybackDto,
+    onNavigateToSongSelect: () -> Unit
 ) {
-    Column (
-        verticalArrangement = Arrangement.SpaceEvenly,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ){
-        val imageId = if(darkTheme){R.drawable.music_icon_dark}else{R.drawable.music_icon}
-        var sliderPosition by remember { mutableFloatStateOf(0f) }
-        var positionText by remember {mutableStateOf("0:00")}
-        var playPause by remember {mutableStateOf(false)}
-
-        playback.setProgressFunction { progress, text ->
-            sliderPosition = progress
-            positionText = text
-        }
-
-        Image(
-            painter = painterResource(id = imageId),
-            contentDescription = null,
-            modifier = Modifier.size(height = 300.dp, width = 300.dp)
-        )
-
-        Column(
-
-        ){
-            Slider(
-                value = sliderPosition,
-                onValueChange = {it ->
-                    sliderPosition = it
-                    playback.seekTo(it)
-                },
-                modifier = Modifier
-                    .width(300.dp)
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        TextButton(
+            onClick = onNavigateToSongSelect
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.stop),
+                contentDescription = null,
+                modifier = Modifier.height(30.dp)
             )
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.width(300.dp)
-            ){
-                Text(text = positionText)
-                Text(text = playback.durationText())
-            }
         }
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.width(300.dp)
-        ){
-            TextButton(
-                onClick = {
-                    playback.playPause(playPause)
-                    playPause = !playPause
-                }
-            ) {
-                val playPauseImage = if(playPause){R.drawable.pause}else{R.drawable.play}
-                Image(
-                    painter = painterResource(id = playPauseImage),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier.height(70.dp)
-                )
+        Column (
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            val imageId = if (dto.darkTheme) {
+                R.drawable.music_icon_dark
+            } else {
+                R.drawable.music_icon
             }
-            TextButton(
-                onClick = { playback.seekTo(0f) }
+            var sliderPosition by remember { mutableFloatStateOf(0f) }
+            var positionText by remember { mutableStateOf("0:00") }
+            var playPause by remember { mutableStateOf(false) }
+
+            dto.playback.setProgressFunction { progress, text ->
+                sliderPosition = progress
+                positionText = text
+            }
+
+            Image(
+                painter = painterResource(id = imageId),
+                contentDescription = null,
+                modifier = Modifier.size(height = 300.dp, width = 300.dp)
+            )
+
+            Column(
+
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.refresh),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier.height(50.dp)
+                Slider(
+                    value = sliderPosition,
+                    onValueChange = { it ->
+                        sliderPosition = it
+                        dto.playback.seekTo(it)
+                    },
+                    modifier = Modifier
+                        .width(300.dp)
                 )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.width(300.dp)
+                ) {
+                    Text(text = positionText)
+                    Text(text = dto.playback.durationText())
+                }
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.width(300.dp)
+            ) {
+                TextButton(
+                    onClick = {
+                        dto.playback.playPause(playPause)
+                        playPause = !playPause
+                    }
+                ) {
+                    val playPauseImage = if (playPause) {
+                        R.drawable.pause
+                    } else {
+                        R.drawable.play
+                    }
+                    Image(
+                        painter = painterResource(id = playPauseImage),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillHeight,
+                        modifier = Modifier.height(70.dp)
+                    )
+                }
+                TextButton(
+                    onClick = { dto.playback.seekTo(0f) }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.refresh),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillHeight,
+                        modifier = Modifier.height(50.dp)
+                    )
+                }
             }
         }
     }
-
 }
 
 
 @Preview(showBackground = true)
 @Composable
-fun MainViewPreview() {
+fun PlaybackViewPreview() {
     MusicTheme (darkTheme = true) {
-        MainView(
-            playback = _mPlaybackService(),
-            darkTheme = true
+        PlaybackView(
+            dto = PlaybackDto(
+                playback = _mPlaybackService(),
+                darkTheme = true
+            ),
+            onNavigateToSongSelect = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SongSelectViewPreview() {
+    MusicTheme (darkTheme = true) {
+        SongSelectView(
+            dto = SongSelectDto(
+                context = null,
+                darkTheme = true
+            ),
+            onNavigateToPlayback = {}
         )
     }
 }
