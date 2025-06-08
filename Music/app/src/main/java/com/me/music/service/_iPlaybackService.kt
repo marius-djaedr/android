@@ -6,9 +6,7 @@ interface _iPlaybackService {
     fun durationText() :String
 
     fun seekTo(pct:Float)
-    fun pause()
-    fun play()
-    fun stop()
+    fun playPause(isPlaying:Boolean)
 
-    suspend fun loadProgress(updateProgress: (Float) -> Unit)
+    fun setProgressFunction(func:(Float, String) -> Unit)
 }

@@ -37,6 +37,7 @@ import com.me.music.service._mPlaybackService
 import com.me.music.ui.theme.MusicTheme
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
@@ -83,75 +84,73 @@ fun PlaybackView(
     darkTheme: Boolean = isSystemInDarkTheme()
 ) {
     Column (
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ){
         val imageId = if(darkTheme){R.drawable.music_icon_dark}else{R.drawable.music_icon}
         var sliderPosition by remember { mutableFloatStateOf(0f) }
+        var positionText by remember {mutableStateOf("0:00")}
+        var playPause by remember {mutableStateOf(false)}
 
-        val scope = rememberCoroutineScope() // Create a coroutine scope
-        scope.launch {
-            playback.loadProgress { progress ->
-                sliderPosition = progress
-            }
+        playback.setProgressFunction { progress, text ->
+            sliderPosition = progress
+            positionText = text
         }
 
         Image(
             painter = painterResource(id = imageId),
             contentDescription = null,
-            modifier = Modifier.size(height = 250.dp, width = 250.dp)
+            modifier = Modifier.size(height = 300.dp, width = 300.dp)
         )
 
-        Slider(
-            value = sliderPosition,
-            onValueChange = {it ->
-                sliderPosition = it
-                playback.seekTo(it)
-                            },
-            modifier = Modifier
-                .width(280.dp)
-                .paddingFromBaseline(top= 24.dp, bottom= 8.dp)
-        )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.width(250.dp)
+        Column(
+
         ){
-            Text(text = playback.currentPositionText())
-            Text(text = playback.durationText())
+            Slider(
+                value = sliderPosition,
+                onValueChange = {it ->
+                    sliderPosition = it
+                    playback.seekTo(it)
+                },
+                modifier = Modifier
+                    .width(300.dp)
+            )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.width(300.dp)
+            ){
+                Text(text = positionText)
+                Text(text = playback.durationText())
+            }
         }
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier.width(250.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.width(300.dp)
         ){
             TextButton(
-                onClick = { playback.pause() }
+                onClick = {
+                    playback.playPause(playPause)
+                    playPause = !playPause
+                }
             ) {
+                val playPauseImage = if(playPause){R.drawable.pause}else{R.drawable.play}
                 Image(
-                    painter = painterResource(id = R.drawable.pause),
+                    painter = painterResource(id = playPauseImage),
                     contentDescription = null,
                     contentScale = ContentScale.FillHeight,
-                    modifier = Modifier.height(40.dp)
+                    modifier = Modifier.height(70.dp)
                 )
             }
             TextButton(
-                onClick = { playback.play() }
+                onClick = { playback.seekTo(0f) }
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.play),
+                    painter = painterResource(id = R.drawable.refresh),
                     contentDescription = null,
                     contentScale = ContentScale.FillHeight,
-                    modifier = Modifier.height(40.dp)
-                )
-            }
-            TextButton(
-                onClick = { playback.stop() }
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.stop),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier.height(40.dp)
+                    modifier = Modifier.height(50.dp)
                 )
             }
         }
@@ -173,9 +172,13 @@ fun MainViewPreview() {
 
 //TODO desired features
 //- scan music from library
-//- sort and select music by author and album
 //- play queue
-//- skip song, forward and back, buttons
+//- shuffle all
+//- sort and select music by author and album
+  //- on author and album pages, button to shuffle and button to play all, simply add to play queue
+//- display current playing song, artist, album
+//- autoplay next in queue
+//- skip song buttons, forward and back
 //- change "stop" to "restart"
 //- bluetooth
 //- smart playlist

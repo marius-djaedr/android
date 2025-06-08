@@ -20,26 +20,14 @@ class _mPlaybackService : _iPlaybackService{
         return formatTime(duration)
     }
 
-
     override fun seekTo(pct: Float) {
         currentPct = pct
     }
 
-    override fun pause() {
-        TODO("Not yet implemented")
-    }
+    override fun playPause(isPlaying: Boolean) {}
 
-    override fun play() {
-        TODO("Not yet implemented")
-    }
+    override fun setProgressFunction(func: (Float, String) -> Unit) {}
 
-    override fun stop() {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun loadProgress(updateProgress: (Float) -> Unit) {
-        TODO("Not yet implemented")
-    }
 
     // Format milliseconds into minutes:seconds format (e.g., 1:05)
     private fun formatTime(milliseconds: Int): String {

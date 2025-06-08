@@ -24,32 +24,34 @@ class PlaybackService(val mediaPlayer: MediaPlayer) : _iPlaybackService{
         mediaPlayer.seekTo(msec.toInt())
     }
 
-    override fun pause() {
-        mediaPlayer.pause()
-    }
-
-    override fun play() {
-        mediaPlayer.start()
-    }
-
-    override fun stop() {
-        mediaPlayer.stop()
-    }
-
-
-    /** Iterate the progress value */
-    override suspend fun loadProgress(updateProgress: (Float) -> Unit) {
-        val handler = Handler(Looper.getMainLooper())
-
-        val updateSeekBar: Runnable = object : Runnable {
-            override fun run() {
-                updateProgress(currentPercent())
-
-                // Repeat this task every 1 second
-                handler.postDelayed(this, 1000)
-            }
+    override fun playPause(isPlaying: Boolean) {
+        if(isPlaying){
+            mediaPlayer.pause()
+        }else{
+            mediaPlayer.start()
         }
+    }
 
+    // Handler to update SeekBar and current time text every second
+    private val handler = Handler(Looper.getMainLooper())
+    private var updateProgress: ((Float, String) -> Unit)? = null
+
+    override fun setProgressFunction(func:(Float, String) -> Unit){
+        updateProgress = func
+        handler.post(updateSeekBar)
+    }
+
+    // Runnable task that updates SeekBar and current playback time
+    private val updateSeekBar: Runnable = object : Runnable {
+        override fun run() {
+            // Update SeekBar progress and current time text
+            if(updateProgress != null){
+                updateProgress?.invoke(currentPercent(), currentPositionText())
+            }
+
+            // Repeat this task every 1 second
+            handler.postDelayed(this, 1000)
+        }
     }
 
 
