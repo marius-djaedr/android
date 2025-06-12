@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,18 +54,85 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            enableEdgeToEdge()
-            setContent {
-                MusicTheme {
-                    App(this)
-                }
+        enableEdgeToEdge()
+        setContent {
+            MusicTheme {
+//                    App(this)
+                MyApp()
+
+//                FriendsListScreen({})
+ //               ProfileScreen(profile = Profile("Name"),{})
             }
-        }catch(e:Exception){
-            val exc = e
         }
     }
 }
+
+@Serializable
+data class Profile(val name: String)
+
+@Serializable
+object FriendsList
+
+// Define the ProfileScreen composable.
+@Composable
+fun ProfileScreen(
+    profile: Profile,
+    onNavigateToFriendsList: () -> Unit
+) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)) {
+            Text("Profile for ${profile.name}")
+            Button(onClick = { onNavigateToFriendsList() }) {
+                Text("Go to Friends List")
+            }
+        }
+    }
+}
+
+// Define the FriendsListScreen composable.
+@Composable
+fun FriendsListScreen(onNavigateToProfile: () -> Unit) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)){
+            Text("Friends List")
+            Button(onClick = { onNavigateToProfile() }) {
+                Text("Go to Profile")
+            }
+        }
+    }
+}
+
+// Define the MyApp composable, including the `NavController` and `NavHost`.
+@Composable
+fun MyApp() {
+    val navController = rememberNavController()
+    NavHost(navController, startDestination = Profile(name = "John Smith")) {
+        composable<Profile> { backStackEntry ->
+            val profile: Profile = backStackEntry.toRoute()
+            ProfileScreen(
+                profile = profile,
+                onNavigateToFriendsList = {
+                    navController.navigate(route = FriendsList)
+                }
+            )
+        }
+        composable<FriendsList> {
+            FriendsListScreen(
+                onNavigateToProfile = {
+                    navController.navigate(
+                        route = Profile(name = "Aisha Devi")
+                    )
+                }
+            )
+        }
+    }
+}
+
+
 
 // https://developer.android.com/guide/navigation/design
 @Serializable
@@ -89,6 +157,17 @@ fun App(
         navController,
         startDestination = SongSelectDto(context = context, darkTheme = darkTheme)
     ) {
+        composable<SongSelectDto> {backStackEntry ->
+            val songSelect: SongSelectDto = backStackEntry.toRoute()
+            SongSelectView(
+                dto = songSelect,
+                onNavigateToPlayback = { playback ->
+                    navController.navigate(
+                        route = PlaybackDto(playback = playback, darkTheme = darkTheme)
+                    )
+                }
+            )
+        }
         composable<PlaybackDto> { backStackEntry ->
             val playback: PlaybackDto = backStackEntry.toRoute()
             PlaybackView(
@@ -96,16 +175,6 @@ fun App(
                 onNavigateToSongSelect = {
                     navController.navigate(
                         route = SongSelectDto(context = context, darkTheme = darkTheme)
-                    )
-                }
-            )
-        }
-        composable<SongSelectDto> {
-            SongSelectView(
-                dto = SongSelectDto(context = context, darkTheme = darkTheme),
-                onNavigateToPlayback = { playback ->
-                    navController.navigate(
-                        route = PlaybackDto(playback = playback, darkTheme = darkTheme)
                     )
                 }
             )
@@ -118,15 +187,21 @@ fun SongSelectView(
     dto: SongSelectDto,
     onNavigateToPlayback: (_iPlaybackService) -> Unit
 ){
-    TextButton(
-        onClick = {
-            // Create MediaPlayer instance with a raw audio resource
-            val mediaPlayer = MediaPlayer.create(dto.context, R.raw.sound)
-            val playback = PlaybackService(mediaPlayer)
-            onNavigateToPlayback(playback)
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)) {
+            TextButton(
+                onClick = {
+                    // Create MediaPlayer instance with a raw audio resource
+                    val mediaPlayer = MediaPlayer.create(dto.context, R.raw.sound)
+                    val playback = PlaybackService(mediaPlayer)
+                    onNavigateToPlayback(playback)
+                }
+            ) {
+                Text(text = "Play Song")
+            }
         }
-    ) {
-        Text(text = "Play Song")
     }
 }
 
